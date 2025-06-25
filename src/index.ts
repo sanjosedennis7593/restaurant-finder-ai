@@ -1,4 +1,6 @@
 import express, { Request, Response, Application } from 'express';
+import { isAxiosError } from 'axios';
+
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -21,37 +23,52 @@ app.get('/api/execute', async (req: Request<{}, {}, {}, RequestQuery>, res: Resp
 
   try {
 
-    const response = await convertMessageToFoursquarePayload(message);
 
-    const payload: RestaurantPayload = {
-      query: response.query,
-      near: response.near, 
-      categories: response.categories,
-      price: response.price,
-      open_now: response.open_now,
-      limit: 10,
-      min_price: response.min_price,
-      max_price: response.min_price,
-      radius: response.radius,
-      sort: response.sort
-    };
+    if (message.trim() !== '') {
+      const response = await convertMessageToFoursquarePayload(message);
 
-    console.log('Query Params', payload)
+      const payload: RestaurantPayload = {
+        query: response.query,
+        near: response.near,
+        categories: response.categories,
+        price: response.price,
+        open_now: response.open_now,
+        limit: response.limit || 10,
+        min_price: response.min_price,
+        max_price: response.max_price,
+        radius: response.radius,
+        sort: response.sort
+      };
 
-    const searchResults = await getRestaurants(payload)
+      console.log('Query Params', payload)
 
-    console.log('Search Results', searchResults.data)
+      const searchResults = await getRestaurants(payload)
 
-    res.json({
-      status: 200,
-      data: searchResults.data
-    });
+      console.log('Search Results', searchResults.data)
+
+      res.json({
+        status: 200,
+        data: searchResults.data
+      });
+    }
+    else {
+      res.json({ error: 'Message is required and cannot be empty.' });
+    }
+
   } catch (err) {
-    console.log('error', err)
-    res.json({
-      status: 400,
-      error: 'Something went wrong!'
-    });
+    if (isAxiosError(err)) {
+      res.json({
+        status: err.response?.status,
+        message: err.response?.data?.message
+      });
+    } else {
+      res.json({
+        status: 400,
+        message: 'Something went wrong'
+      });
+    }
+
+
   }
 
 });
