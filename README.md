@@ -2,6 +2,7 @@
 <h3>To run locally</h3>
 
 ```
+npm install
 npm run dev
 ```
 
