@@ -1,5 +1,7 @@
 import express, { Request, Response, Application } from 'express';
 import { isAxiosError } from 'axios';
+import rateLimit from 'express-rate-limit';
+
 
 import dotenv from 'dotenv';
 
@@ -13,6 +15,18 @@ const app: Application = express();
 
 const port = process.env.PORT || 8000;
 
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 Minutes
+  max: 30, 
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true, 
+  legacyHeaders: false,  
+});
+
+
+app.use(limiter);
+
+
 app.get('/api/execute', async (req: Request<{}, {}, {}, RequestQuery>, res: Response) => {
 
   const { message = '', code } = req.query;
@@ -22,7 +36,6 @@ app.get('/api/execute', async (req: Request<{}, {}, {}, RequestQuery>, res: Resp
   }
 
   try {
-
 
     if (message.trim() !== '') {
       const response = await convertMessageToFoursquarePayload(message);
@@ -56,6 +69,7 @@ app.get('/api/execute', async (req: Request<{}, {}, {}, RequestQuery>, res: Resp
     }
 
   } catch (err) {
+
     if (isAxiosError(err)) {
       res.json({
         status: err.response?.status,
