@@ -1,0 +1,1 @@
+export const FOUR_SQUARE_API_URL = 'https://places-api.foursquare.com/places/search';
